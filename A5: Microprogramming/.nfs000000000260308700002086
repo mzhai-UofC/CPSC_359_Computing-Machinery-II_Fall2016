@@ -1,0 +1,309 @@
+//CPSC359 Assignment 5
+.constant
+OBJREF 0x40
+.end-constant
+
+.main
+	
+        LDC_W	OBJREF
+        BIPUSH 1
+        IPRIME
+        HALT
+.end-main
+
+//n is integer
+//returns 1 if prime, 0 otherwise
+.method iprime (n)
+.var
+ r
+ i
+ tmp
+.end-var
+iprime:
+        BIPUSH 48
+        ISTORE r
+        //n <= 1
+        ILOAD n
+        BIPUSH 2
+        ISUB
+        IFLT return
+
+        //n <= 3   
+        ILOAD n
+        BIPUSH 4
+        ISUB
+        IFLT iprimeTrue
+     
+        
+        //DUP
+        //n mod 2 == 0 or n mod 3 == 0
+        LDC_W   OBJREF
+        ILOAD n
+        //HALT 
+        BIPUSH 2
+        BIPUSH 1
+        INVOKEVIRTUAL idiv 
+        IFEQ return
+
+
+        LDC_W   OBJREF
+        ILOAD n
+        //HALT 
+        BIPUSH 3
+        BIPUSH 1
+        INVOKEVIRTUAL idiv 
+        IFEQ return
+
+        //i = 5
+        BIPUSH 5
+        ISTORE i
+//while check
+iprime2:
+        //ixi <= n?  
+        LDC_W   OBJREF     
+        ILOAD i
+        ILOAD i
+        INVOKEVIRTUAL imul
+        ILOAD n
+        BIPUSH 1
+        IADD   
+        ISUB
+        IFLT iprime3
+        GOTO iprimeTrue
+
+//while body
+iprime3:
+        // n mod (i+2) == 0?
+        //HALT
+        //DUP
+        ILOAD i
+        BIPUSH 2
+        ISTORE tmp 
+        LDC_W   OBJREF
+        ILOAD n
+        ILOAD tmp
+        BIPUSH 1
+        INVOKEVIRTUAL idiv
+        IFEQ return
+        //HALT
+        //n mod i == 0?
+        LDC_W   OBJREF
+        ILOAD n
+        ILOAD i
+        BIPUSH 1
+        INVOKEVIRTUAL idiv
+        IFEQ return
+        
+        IINC i 6
+        GOTO iprime2
+
+iprimeTrue:
+        BIPUSH 49
+        ISTORE r
+return:
+        ILOAD r
+        IRETURN
+
+.end-method
+
+
+//raises a to b
+.method ipower (a, b)
+.var
+ p
+ i
+.end-var
+ipower:
+        BIPUSH 0x1
+        ISTORE p
+        BIPUSH 0x0
+        ISTORE i 
+//for loop check
+ipower1:
+        ILOAD i
+        ILOAD b
+        ISUB
+        IFLT ipower2
+        //POP
+        GOTO return
+
+//for body
+ipower2:
+        LDC_W OBJREF
+        ILOAD p
+        ILOAD a
+        INVOKEVIRTUAL imul
+        ISTORE p
+        IINC i 0x1
+        GOTO ipower1
+
+return:
+        ILOAD p
+        IRETURN
+.end-method
+
+
+.method idiv (a, b, c)
+.var
+ q
+ r
+ n
+.end-var
+absA:
+        ILOAD a
+        //NEG
+        ISTORE a
+        IINC n 0x1  
+idiv:
+        ILOAD a
+        IFLT absA
+        GOTO idiv2
+
+absB:
+        ILOAD b
+        ISTORE b
+        IINC n 0x1
+idiv2:
+        ILOAD b
+        IFLT absB
+
+//a and b are now abs of a and b respectively
+        BIPUSH 0
+        ISTORE q
+        ILOAD a
+        ISTORE r
+//While check
+idiv3:
+        ILOAd b
+        ILOAD r
+        BIPUSH 1
+        IADD
+        ISUB
+        IFLT idiv4
+        GOTO idiv5
+
+//while body
+idiv4:
+        ILOAD r
+        ILOAD b
+        ISUB
+        ISTORE r
+        IINC q 1
+        GOTO idiv3
+
+idiv5:
+        BIPUSH 0x1
+        ILOAD n
+        ISUB
+        IFEQ idiv6
+        GOTO idiv7
+idiv6:
+        ILOAD q
+        //INEG
+        ISTORE q
+
+idiv7:  
+        ILOAD c
+        IFEQ idiv8
+        ILOAD r
+        GOTO return
+idiv8:
+        ILOAD q
+return:
+        IRETURN
+.end-method
+
+.method imul(a, b)
+
+.var
+ m
+ c
+ o
+ i
+ n
+.end-var
+imul:
+        //m = 0
+        BIPUSH 0x0
+        ISTORE m
+        GOTO imul1
+absA:
+        ILOAD a
+        INEG
+        ISTORE a        
+        IINC n 0x1
+imul1: 
+        ILOAD a       
+        IFLT absA
+        GOTO imul2
+        
+absB:
+        ILOAD b
+        INEG
+        ISTORE b
+        IINC n 0x1
+imul2:     
+        ILOAD b
+        IFLT absB
+
+        ILOAD a
+        ILOAD b
+        //absA - absB
+        ISUB
+
+        IFLT bBiggerThanA
+        //POP
+        GOTO aBiggerThanB
+
+aBiggerThanB:
+        ILOAD b
+        ISTORE c
+        ILOAD a
+        ISTORE o
+        GOTO imul3
+
+bBiggerThanA:
+        ILOAD a
+        ISTORE c
+        ILOAD b
+        ISTORE o
+        GOTO imul3
+
+imul3:
+        BIPUSH 0x0
+        ISTORE i
+//for loop check
+imul4:
+        ILOAD i
+        ILOAD c
+        ISUB
+        IFLT imul5
+        //POP
+        GOTO imul6
+
+//for body
+imul5:
+        ILOAD m
+        ILOAD o
+        IADD
+        ISTORE m
+        IINC i 0x1
+        GOTO imul4
+
+imul6:
+        BIPUSH 0x1
+        ILOAD n
+        IF_ICMPEQ imul7
+        GOTO return
+
+imul7:
+        ILOAD m
+        INEG
+        ISTORE m
+        
+
+return: 
+        ILOAD m
+        IRETURN
+.end-method
+

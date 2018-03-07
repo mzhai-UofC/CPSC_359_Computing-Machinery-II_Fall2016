@@ -1,0 +1,390 @@
+
+	0.section    .init	;136;0c
+.globl     _start
+
+_start:
+    b       main
+    
+.section .text
+
+main:
+    	mov     	sp, #0x8000 // Initializing the stack pointer
+	bl		EnableJTAG // Enable JTAG
+	bl		InitUART    // Initialize the UART
+
+	
+// You can use WriteStringUART and ReadLineUART functions here after the UART initializtion.
+
+
+	ldr  r0, =creat               // print out the authors
+	mov  r1, #26
+	bl   WriteStringUART
+
+loop:
+	ldr  r0, =enterSize         
+	mov  r1, #44
+	bl   WriteStringUART
+
+	ldr   r0, =ABuff            //Getting the size of the list from user
+	mov   r1, #256	
+	bl    ReadLineUART          
+	
+	cmp  r0, #1                  //check if the string is only one byte
+	bne  invsize
+	
+	ldr	r0, =ABuff          // transfer the string to number
+	ldrb	r9,[r0]
+    sub	    r9, #48
+    
+	cmp r9, #1                  //check if the size of the list is between 1 and 9
+	blt  invsize
+	cmp r9, #9
+	bgt  invsize
+	mov r3, #0            // loop variable
+	mov r4, #0           //sum
+
+loop1:
+	cmp  r3, r9                   
+	bge  finish
+
+loop2:                           // the loop enter all the grades
+	ldr  r0, =enterNumber    
+	mov  r1, #26
+	bl   WriteStringUART
+  
+	ldr	r0, =ABuff          //enter the grade
+	mov	r1, #256	
+	bl	ReadLineUART
+    
+        cmp r0, #0                  // check if the grade is between 1 and 3 bytes
+    	ble  invGrade
+    	cmp r0, #3 
+    	bgt invGrade
+        
+    	ldr r1, =ABuff              // if the grade is only one byte, transfer it to number
+    	cmp  r0, #1
+    	bne  else1  
+	ldrb r5,[r1]
+    	sub  r5, #48
+        cmp  r5, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r5, #9
+        bgt  Invformat
+    	b    compare
+ 
+else1:
+    	cmp  r0, #2                 // if the grade is two bytes, transfer it to number
+    	bne  else2
+    	ldrb r5,[r1]
+   	sub r5, #48
+        cmp  r5, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r5, #9
+        bgt  Invformat
+   	ldrb r6, [r1, #1]
+    	sub  r6, #48
+        cmp  r6, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r6, #9
+        bgt  Invformat
+    	mov  r7, #10
+    	mul  r5, r7
+    	add  r5, r6
+    	b    compare
+
+else2:
+    	ldrb r5,[r1]                  // if the grade is three bytes,transfer it to number
+    	sub r5, #48
+        cmp  r5, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r5, #9
+        bgt  Invformat
+    	ldrb r6, [r1, #1]
+    	sub  r6, #48
+        cmp  r6, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r6, #9
+        bgt  Invformat
+    	ldrb r7, [r1, #2]
+    	sub  r7, #48
+        cmp  r7, #0
+        blt  Invformat              // check if the input numbers are number(right format)
+        cmp  r7, #9
+        bgt  Invformat
+    	mov  r8, #100 
+    	mul  r5, r8
+    	mov  r8, #10
+    	mul  r6, r8
+    	add  r5, r6
+    	add  r5, r7
+
+compare:
+	cmp  r5, #0                 // check if the grade is between 0 and 100
+	blt  invGrade
+	cmp  r5, #100
+	bgt  invGrade
+	add  r4, r5
+	add  r3,#1
+	b  loop1
+
+invGrade:
+	ldr  r0, =invaildNumber       // print out the invalid information
+	mov  r1, #57
+	bl   WriteStringUART
+	b    loop2
+
+finish:    
+        sub  r2, r4, #100       // sum is in r4         
+        cmp  r2, #0
+        blt  done1
+        mov  r5, r4
+        mov  r3, #0
+
+loop4:                           // transfer the 3 bytes sum into string and print out the sum
+        sub  r5, #100
+        add  r3, #1
+        cmp  r5, #0
+        bge  loop4
+        sub  r3, #1              // the first byte is in r3
+        mov  r5, #100
+        mul  r5, r3,r5
+        sub  r2, r4, r5
+        mov  r7, r2
+        add  r3, #48  
+        mov  r6, #0
+loop5:
+        sub  r2, #10
+        add  r6, #1
+        cmp  r2, #0
+        bge  loop5
+        sub  r6, #1            //the second byte is in r6
+        mov  r5, #10
+        mul  r5, r6, r5
+        sub  r2, r7, r5
+        add  r6, #48  
+        add  r2, #48  
+        mov  r7, r2            // the third byte is in r7       
+        
+        ldr  r0, =sum
+	mov  r1, #16
+	bl   WriteStringUART      
+       
+        ldr  r0, =Buffer          //print out the sum
+        strb r3,[r0]
+        strb r6,[r0, #1]
+        strb r7,[r0, #2]        
+        mov  r1, #3
+        bl   WriteStringUART 
+        b branch
+ 
+done1:                            //transfer the two bytes sum into string and print out sum
+        sub r2, r4, #10
+        cmp r2, #0
+        blt done2
+        mov r5, r4
+        mov r3, #0
+
+loop6:
+        sub  r5, #10
+        add  r3, #1
+        cmp  r5, #0
+        bge  loop6
+        sub  r3, #1               // the first byte is in r3            
+        mov  r5, #10
+        mul  r5, r3, r5
+        sub  r2, r4, r5
+        add  r3, #48 
+        add  r2, #48  
+        mov  r6, r2               // the second byte is in r6
+        
+        ldr  r0, =sum
+	mov  r1, #16
+	bl   WriteStringUART 
+       
+        ldr  r0, =Buffer           //print out the sum
+        strb r3,[r0]
+        strb r6,[r0, #1]        
+        mov  r1, #2
+        bl   WriteStringUART 
+        b branch
+      
+  
+done2:                                      // transfer the one byte number into string and print out the sum
+        add  r5, r4, #48  // first
+        
+	ldr  r0, =sum
+	mov  r1, #16
+	bl   WriteStringUART 
+        
+        ldr  r0, =Buffer
+        strb r5,[r0]
+        mov  r1, #1
+        bl   WriteStringUART      
+
+branch:
+	mov r3, #0
+        mov r5, #0
+
+loop3:                               //calculate the average
+        sub  r4, r9    
+        add  r5, #1
+        cmp  r4, #0
+        blt  done 
+        mov  r6, r4   //remainder
+        b    loop3
+
+done:
+        sub  r5, #1   //quotient
+        cmp  r5, #100                     //if average is 100, then transfer the quotient to string
+        bne  done3
+        mov  r3, #1
+        mov  r4, #0
+        mov  r6, #0
+        add  r3, #48
+        add  r4, #48
+        add  r6, #48
+          
+        ldr  r0, = average
+	mov  r1, #18
+	bl   WriteStringUART 
+       
+        ldr  r0, =Buffer              // print out the average
+        strb r3,[r0]
+        strb r4,[r0, #1]
+        strb r6,[r0, #2]        
+        mov  r1, #3
+        bl   WriteStringUART
+        b   loop 
+
+done3: 
+        sub  r2, r5, #10            // when the quotient is two bytes and remainder is one byte, convert it to strings
+        cmp  r2, #0
+        blt  done4
+        mov  r3, #0
+        mov  r7, r5
+loop7:
+        sub  r7,r7, #10
+        add  r3, #1
+        cmp  r7, #0
+        bge  loop7
+        sub  r3, #1
+        mov  r2, #10
+        mul  r2, r3, r2
+        sub  r2, r5, r2
+        add  r3, #48     // first byte of quotient
+        add  r2, #48     // second byte of quotient
+        mov  r7, r2       //second byte of quotient
+       
+        add  r6, #48     //  remainder    
+
+        ldr  r0, = average
+	mov  r1, #18
+	bl   WriteStringUART     //print out quotient and remainder
+        
+        ldr  r0, = quotient
+	mov  r1, #12
+	bl   WriteStringUART 
+        
+        ldr  r0, =Buffer
+        strb r3,[r0]
+        strb r7,[r0, #1]       
+        mov  r1, #2
+        bl   WriteStringUART
+ 
+        ldr  r0, = remainder
+	mov  r1, #13
+	bl   WriteStringUART
+        
+        ldr  r0, =Buffer
+        strb r6,[r0]      
+        mov  r1, #1
+        bl   WriteStringUART 
+       
+        b loop 
+
+done4:                // when the quotient is one byte and remainder is one byte, convert it to strings
+        add  r5, #48            // first byte of quotient        
+        add  r6, #48            // first byte of remainder    
+        
+        ldr  r0, = average
+	mov  r1, #18
+	bl   WriteStringUART          // print out the quotient and remainder
+        
+        ldr  r0, = quotient
+	mov  r1, #12
+	bl   WriteStringUART 
+        
+        ldr  r0, =Buffer
+        strb r5,[r0]      
+        mov  r1, #1
+        bl   WriteStringUART
+ 
+        ldr  r0, = remainder
+	mov  r1, #13
+	bl   WriteStringUART
+        
+        ldr  r0, =Buffer
+        strb r6,[r0]      
+        mov  r1, #1
+        bl   WriteStringUART           
+	b   loop
+
+
+invsize:
+	ldr  r0, =invalidSize       // print out the invalid information
+	mov  r1, #68
+	bl   WriteStringUART
+	b    loop
+
+
+Invformat:
+       ldr  r0, =invalidformat       // print out the invalid information
+       mov  r1, #24
+       bl   WriteStringUART
+       b    loop2
+
+
+haltLoop$:
+	b	haltLoop$
+
+.section .data
+creat:
+      .ascii	"\n\rCreated by: Muzhou,Zhai\n" 
+
+enterSize:
+      .ascii	"\n\rPlease enter the size of the number list:\n"
+
+enterNumber:
+       .ascii	"\n\rPlease enter the number:\n"
+
+invaildNumber:
+       .ascii	"\n\rInvalid number! The number should be between 0 and 100.\n"
+
+invalidSize:
+       .ascii	"\n\rInvalid number! The size of number list should be between 1 and 9.\n"
+
+invalidformat:
+       .ascii   "\n\rWrong number format! \n"
+
+sum:
+       .ascii	"\n\rThe sum is: "
+
+average:
+       .ascii	"\n\rThe average is: "
+
+remainder:
+       .ascii   "  remainder: "
+
+quotient:
+       .ascii   "  quotient: "
+
+
+ABuff:
+       .rept  256
+       .byte 0
+       .endr
+Buffer:
+       .rept  256
+       .byte 0
+       .endr
+
